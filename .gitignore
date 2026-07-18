@@ -1,0 +1,20 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+
+# Doxygen output
+docs/html/
+docs/latex/
+
+# Editor / IDE / tooling
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
