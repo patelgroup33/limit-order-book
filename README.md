@@ -1,6 +1,6 @@
 # LOB — A C++20 Limit Order Book & Matching Engine
 
-[![CI](https://github.com/your-handle/lob/actions/workflows/ci.yml/badge.svg)](https://github.com/your-handle/lob/actions/workflows/ci.yml)
+[![CI](https://github.com/patelgroup33/limit-order-book/actions/workflows/ci.yml/badge.svg)](https://github.com/patelgroup33/limit-order-book/actions/workflows/ci.yml)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 

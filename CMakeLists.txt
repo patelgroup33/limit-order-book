@@ -13,7 +13,7 @@ cmake_minimum_required(VERSION 3.20)
 project(lob
     VERSION 0.1.0
     DESCRIPTION "Production-inspired C++20 Limit Order Book and Matching Engine"
-    HOMEPAGE_URL "https://github.com/your-handle/lob"
+    HOMEPAGE_URL "https://github.com/patelgroup33/limit-order-book"
     LANGUAGES CXX)
 
 # In-source builds pollute the tree with generated files and make `git clean`
