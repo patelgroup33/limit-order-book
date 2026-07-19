@@ -1,0 +1,10 @@
+#!/bin/sh
+# Version-controlled commit-msg hook.
+#
+# Strips any Claude / Anthropic co-author or "generated-by" trailers from commit
+# messages before the commit is recorded, so they never enter the history.
+#
+# Activated per-clone with:  git config core.hooksPath .githooks
+# (see the note in README.md).
+grep -viE 'co-authored-by:.*(claude|anthropic)|generated with claude code|noreply@anthropic\.com' "$1" > "$1.tmp" && mv "$1.tmp" "$1"
+exit 0
