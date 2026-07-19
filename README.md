@@ -1,11 +1,11 @@
-# LOB — A C++20 Limit Order Book & Matching Engine
+# LOB — A C++ Limit Order Book & Matching Engine
 
 [![CI](https://github.com/patelgroup33/limit-order-book/actions/workflows/ci.yml/badge.svg)](https://github.com/patelgroup33/limit-order-book/actions/workflows/ci.yml)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A production-inspired, single-threaded **limit order book and matching engine**
-in modern C++20, with **price–time (FIFO) priority** and the data structures a
+in modern C++, with **price–time (FIFO) priority** and the data structures a
 real exchange matching core uses. Built incrementally, tested at every step, and
 optimized against its own benchmarks.
 
