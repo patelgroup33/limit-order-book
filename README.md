@@ -66,6 +66,24 @@ and cut match latency roughly in half — with all 49 tests passing unchanged.
 Full methodology and before/after tables: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 *(Numbers are from a loaded laptop — read the scaling, not the absolute ns.)*
 
+## Live simulation & visualizer
+
+The `lob_sim` executable drives the **real matching engine** with synthetic
+order flow and records a deterministic replay (`web/simulation.json`). A
+dependency-free web page (`web/index.html`) replays it: an L2 order-book ladder,
+a cumulative market-depth chart, a time-&-sales tape, a price sparkline, and
+play/pause/scrub/speed controls.
+
+```bash
+cmake --build build --target lob_sim
+./build/sim/lob_sim 1200 web/simulation.json    # (re)generate the replay
+cd web && python3 -m http.server 8137           # open http://localhost:8137
+```
+
+A GitHub Actions workflow publishes `web/` to GitHub Pages (enable **Settings →
+Pages → Source: GitHub Actions**), giving a shareable demo at
+`https://patelgroup33.github.io/limit-order-book/`. See [web/README.md](web/README.md).
+
 ## Building
 
 ```bash
@@ -97,8 +115,10 @@ include/lob/   public headers (one concept per header)
 src/           library sources
 tests/         GoogleTest suite
 benchmark/     Google Benchmark microbenchmarks
+sim/           lob_sim: order-flow simulator + JSON export
+web/           browser visualizer (index.html) + generated replay data
 docs/          Doxygen config, mainpage, benchmark report
-.github/       CI workflow
+.github/       CI + GitHub Pages workflows
 ```
 
 ## Design decisions worth a look

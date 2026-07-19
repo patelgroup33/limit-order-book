@@ -30,6 +30,7 @@ add_executable(lob_tests
     test_order_book.cpp
     test_matching_engine.cpp
     test_market_and_modify.cpp
+    test_snapshot.cpp
 )
 
 target_link_libraries(lob_tests PRIVATE

@@ -91,6 +91,38 @@ public:
         slots_[static_cast<std::size_t>(idx)].reduce_volume(delta);
     }
 
+    /// @brief Visits up to @c depth occupied levels, best price first, calling
+    ///        `visit(Price, Quantity aggregate_volume, std::size_t order_count)`.
+    ///        Used to build market-data snapshots. O(depth + empty gaps scanned).
+    /// @tparam Visitor callable as `void(Price, Quantity, std::size_t)`.
+    template <typename Visitor>
+    void top_levels(std::size_t depth, Visitor&& visit) const {
+        if (best_ < 0 || depth == 0) {
+            return;
+        }
+        std::size_t taken = 0;
+        if (is_bid_) {  // walk down from the highest price
+            for (std::int64_t i = best_; i >= 0 && taken < depth; --i) {
+                const PriceLevel& level = slots_[static_cast<std::size_t>(i)];
+                if (level.empty()) {
+                    continue;
+                }
+                visit(level.price(), level.total_volume(), level.size());
+                ++taken;
+            }
+        } else {  // walk up from the lowest price
+            const std::int64_t n = static_cast<std::int64_t>(slots_.size());
+            for (std::int64_t i = best_; i < n && taken < depth; ++i) {
+                const PriceLevel& level = slots_[static_cast<std::size_t>(i)];
+                if (level.empty()) {
+                    continue;
+                }
+                visit(level.price(), level.total_volume(), level.size());
+                ++taken;
+            }
+        }
+    }
+
     /// @brief Moves the best index to the next occupied level after the current
     ///        best level has been emptied (called by the matcher). Scans toward
     ///        worse prices; O(gap), usually O(1) since prices cluster near BBO.

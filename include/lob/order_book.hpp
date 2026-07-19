@@ -5,6 +5,7 @@
 #include <optional>
 #include <unordered_map>
 
+#include "lob/book_snapshot.hpp"
 #include "lob/object_pool.hpp"
 #include "lob/order.hpp"
 #include "lob/price_ladder.hpp"
@@ -81,6 +82,10 @@ public:
 
     /// @brief Aggregate resting volume at a price/side (0 if no such level).
     [[nodiscard]] Quantity volume_at(Side side, Price price) const;
+
+    /// @brief Builds an L2 market-data snapshot of the top @c depth levels per
+    ///        side, best price first. This is the feed a visualizer consumes.
+    [[nodiscard]] BookSnapshot snapshot(std::size_t depth) const;
 
 private:
     /// @brief Core matching loop against one side of the book.

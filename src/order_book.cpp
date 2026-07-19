@@ -78,4 +78,17 @@ Quantity OrderBook::volume_at(Side side, Price price) const {
     return level != nullptr ? level->total_volume() : Quantity{};
 }
 
+BookSnapshot OrderBook::snapshot(std::size_t depth) const {
+    BookSnapshot snap;
+    snap.bids.reserve(depth);
+    snap.asks.reserve(depth);
+    bids_.top_levels(depth, [&snap](Price price, Quantity volume, std::size_t count) {
+        snap.bids.push_back(LevelView{price, volume, count});
+    });
+    asks_.top_levels(depth, [&snap](Price price, Quantity volume, std::size_t count) {
+        snap.asks.push_back(LevelView{price, volume, count});
+    });
+    return snap;
+}
+
 }  // namespace lob

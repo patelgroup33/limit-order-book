@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LOB — Order Book Simulation</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #10151c; --line: #21262d;
+    --text: #c9d1d9; --muted: #8b949e; --bid: #26a269; --bid-dim: #0f3d2a;
+    --ask: #e5484d; --ask-dim: #451a1d; --accent: #58a6ff; --amber: #d29922;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--mono); font-size: 13px; -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1180px; margin: 0 auto; padding: 16px; }
+
+  header {
+    display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px;
+  }
+  header h1 { font-size: 15px; margin: 0; letter-spacing: .5px; font-weight: 600; }
+  header h1 .sub { color: var(--muted); font-weight: 400; }
+  .stat { display: flex; flex-direction: column; }
+  .stat .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .stat .v { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .stat .v.big { font-size: 26px; }
+  .up { color: var(--bid); } .down { color: var(--ask); }
+
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 14px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel h2 {
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line);
+  }
+  .right { display: flex; flex-direction: column; gap: 14px; }
+
+  /* Order book ladder */
+  .ladder { padding: 6px 0; }
+  .row {
+    display: grid; grid-template-columns: 1fr 1fr 34px; align-items: center;
+    padding: 1px 12px; position: relative; font-variant-numeric: tabular-nums;
+  }
+  .row .bar { position: absolute; top: 1px; bottom: 1px; right: 0; opacity: .28; border-radius: 2px; }
+  .row .px { z-index: 1; }
+  .row .sz { z-index: 1; text-align: right; color: var(--muted); }
+  .row .ct { z-index: 1; text-align: right; color: #6e7681; font-size: 11px; }
+  .row.ask .px { color: var(--ask); } .row.ask .bar { background: var(--ask); }
+  .row.bid .px { color: var(--bid); } .row.bid .bar { background: var(--bid); }
+  .row.best .px { font-weight: 700; }
+  .spread {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 12px; margin: 4px 0; background: var(--panel2);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    color: var(--muted); font-size: 11px;
+  }
+  .spread .last { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  canvas { display: block; width: 100%; }
+  .depthwrap { padding: 8px 8px 4px; }
+
+  /* Trade tape */
+  .tape { max-height: 220px; overflow: hidden; }
+  .tape .t {
+    display: grid; grid-template-columns: 16px 1fr 1fr; gap: 8px;
+    padding: 2px 12px; font-variant-numeric: tabular-nums; border-bottom: 1px solid #12171e;
+  }
+  .tape .t .side { font-weight: 700; }
+  .tape .t.b .side, .tape .t.b .p { color: var(--bid); }
+  .tape .t.s .side, .tape .t.s .p { color: var(--ask); }
+  .tape .t .q { text-align: right; color: var(--muted); }
+
+  /* Controls */
+  .controls {
+    display: flex; align-items: center; gap: 12px; margin-top: 14px;
+    padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  }
+  button {
+    background: #21262d; color: var(--text); border: 1px solid #30363d; border-radius: 6px;
+    padding: 6px 10px; font-family: var(--mono); font-size: 13px; cursor: pointer;
+  }
+  button:hover { background: #2d333b; }
+  .speeds button.on { background: var(--accent); color: #05121f; border-color: var(--accent); }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  .frame { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 120px; text-align: right; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 8px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>LOB <span class="sub">· matching-engine replay</span></h1>
+    <div class="stat"><span class="k">Last</span><span class="v big" id="last">—</span></div>
+    <div class="stat"><span class="k">Best Bid</span><span class="v up" id="bb">—</span></div>
+    <div class="stat"><span class="k">Best Ask</span><span class="v down" id="ba">—</span></div>
+    <div class="stat"><span class="k">Spread</span><span class="v" id="sp">—</span></div>
+    <div class="stat" style="margin-left:auto"><span class="k">Price history</span>
+      <canvas id="spark" width="220" height="40" style="width:220px;height:40px"></canvas></div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Order Book (L2)</h2>
+      <div class="ladder">
+        <div id="asks"></div>
+        <div class="spread">
+          <span id="spr-l">spread —</span>
+          <span class="last" id="spr-last">—</span>
+          <span id="spr-r">mid —</span>
+        </div>
+        <div id="bids"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="panel">
+        <h2>Market Depth (cumulative)</h2>
+        <div class="depthwrap"><canvas id="depth" height="260" style="height:260px"></canvas></div>
+      </div>
+      <div class="panel">
+        <h2>Time &amp; Sales</h2>
+        <div class="tape" id="tape"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="back" title="Step back">⏮</button>
+    <button id="play" title="Play / pause" style="min-width:44px">▶</button>
+    <button id="fwd" title="Step forward">⏭</button>
+    <span class="speeds" id="speeds">
+      <button data-s="0.5">0.5×</button>
+      <button data-s="1" class="on">1×</button>
+      <button data-s="2">2×</button>
+      <button data-s="4">4×</button>
+    </span>
+    <input type="range" id="scrub" min="0" max="0" value="0" />
+    <span class="frame" id="frame">frame 0 / 0</span>
+  </div>
+  <div class="hint">Synthetic order flow driving the C++20 matching engine. Data: <code>simulation.json</code> (deterministic, seeded).</div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  let DATA = null, SCALE = 100, FRAMES = [], i = 0, playing = false, speed = 1, timer = null;
+  const BASE_FPS = 12;
+  const prices = []; // last price per frame, for the sparkline
+
+  const fmtP = (p) => (p / SCALE).toFixed(2);
+  const fmtS = (s) => s.toLocaleString();
+
+  function setSpeed(s) {
+    speed = s;
+    [...$("speeds").children].forEach((b) => b.classList.toggle("on", +b.dataset.s === s));
+    if (playing) { stop(); start(); }
+  }
+  function start() {
+    playing = true; $("play").textContent = "❚❚";
+    timer = setInterval(step, 1000 / (BASE_FPS * speed));
+  }
+  function stop() {
+    playing = false; $("play").textContent = "▶";
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+  function step() {
+    if (i >= FRAMES.length - 1) { stop(); return; }
+    goto(i + 1);
+  }
+  function goto(n) {
+    i = Math.max(0, Math.min(FRAMES.length - 1, n));
+    $("scrub").value = i;
+    render();
+  }
+
+  // --- rendering ---------------------------------------------------------
+  function ladderRows(levels, cls, maxSz) {
+    let html = "";
+    for (let k = 0; k < levels.length; k++) {
+      const [p, s, c] = levels[k];
+      const best = k === 0 ? " best" : "";
+      const w = (100 * s / maxSz).toFixed(1);
+      html += `<div class="row ${cls}${best}"><span class="bar" style="width:${w}%"></span>`
+            + `<span class="px">${fmtP(p)}</span><span class="sz">${fmtS(s)}</span>`
+            + `<span class="ct">${c}</span></div>`;
+    }
+    return html;
+  }
+
+  function recentTrades(upto, want) {
+    const out = [];
+    for (let f = upto; f >= 0 && out.length < want; f--) {
+      const tr = FRAMES[f].trades;
+      for (let k = tr.length - 1; k >= 0 && out.length < want; k--) out.push(tr[k]);
+    }
+    return out; // newest first
+  }
+
+  function render() {
+    const f = FRAMES[i];
+    const bids = f.bids, asks = f.asks;
+    const bb = bids.length ? bids[0][0] : null;
+    const ba = asks.length ? asks[0][0] : null;
+
+    $("last").textContent = fmtP(f.last);
+    $("spr-last").textContent = fmtP(f.last);
+    $("bb").textContent = bb === null ? "—" : fmtP(bb);
+    $("ba").textContent = ba === null ? "—" : fmtP(ba);
+    if (bb !== null && ba !== null) {
+      $("sp").textContent = fmtP(ba - bb);
+      $("spr-l").textContent = "spread " + fmtP(ba - bb);
+      $("spr-r").textContent = "mid " + fmtP((ba + bb) / 2);
+    } else { $("sp").textContent = "—"; }
+
+    const maxSz = Math.max(1, ...bids.map((l) => l[1]), ...asks.map((l) => l[1]));
+    // asks rendered worst-at-top so best ask sits just above the spread line
+    $("asks").innerHTML = ladderRows(asks.slice().reverse(), "ask", maxSz);
+    $("bids").innerHTML = ladderRows(bids, "bid", maxSz);
+
+    const tr = recentTrades(i, 18);
+    $("tape").innerHTML = tr.map((t) => {
+      const cls = t[2] === "B" ? "b" : "s";
+      const arrow = t[2] === "B" ? "▲" : "▼";
+      return `<div class="t ${cls}"><span class="side">${arrow}</span>`
+           + `<span class="p">${fmtP(t[0])}</span><span class="q">${fmtS(t[1])}</span></div>`;
+    }).join("");
+
+    drawDepth(f);
+    drawSpark();
+    $("frame").textContent = `frame ${i} / ${FRAMES.length - 1}`;
+  }
+
+  function fitCanvas(cv) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== w * dpr || cv.height !== h * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w, h };
+  }
+
+  function drawDepth(f) {
+    const { ctx, w, h } = fitCanvas($("depth"));
+    ctx.clearRect(0, 0, w, h);
+    const bids = f.bids, asks = f.asks;
+    if (!bids.length || !asks.length) return;
+
+    const cum = (lv) => { let c = 0; return lv.map((l) => { c += l[1]; return [l[0], c]; }); };
+    const bc = cum(bids), ac = cum(asks);
+    const maxCum = Math.max(bc[bc.length - 1][1], ac[ac.length - 1][1], 1);
+    const minP = bids[bids.length - 1][0], maxP = asks[asks.length - 1][0];
+    const padL = 8, padR = 8, padT = 10, padB = 20;
+    const X = (p) => padL + (p - minP) / ((maxP - minP) || 1) * (w - padL - padR);
+    const Y = (v) => (h - padB) - v / maxCum * (h - padT - padB);
+
+    const area = (pts, color, dim) => {
+      if (!pts.length) return;
+      ctx.beginPath();
+      ctx.moveTo(X(pts[0][0]), h - padB);
+      let prevX = X(pts[0][0]);
+      for (const [p, v] of pts) { const x = X(p); ctx.lineTo(prevX, Y(v)); ctx.lineTo(x, Y(v)); prevX = x; }
+      ctx.lineTo(prevX, h - padB); ctx.closePath();
+      ctx.fillStyle = dim; ctx.fill();
+      ctx.beginPath();
+      prevX = X(pts[0][0]); ctx.moveTo(prevX, Y(pts[0][1]));
+      for (const [p, v] of pts) { const x = X(p); ctx.lineTo(prevX, Y(v)); ctx.lineTo(x, Y(v)); prevX = x; }
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+    };
+
+    // bids ascending in price for left-to-right drawing
+    area(bc.slice().reverse(), "#26a269", "rgba(38,162,105,.18)");
+    area(ac, "#e5484d", "rgba(229,72,77,.18)");
+
+    // mid line
+    const mid = (bids[0][0] + asks[0][0]) / 2;
+    ctx.strokeStyle = "#30363d"; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(X(mid), padT); ctx.lineTo(X(mid), h - padB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#8b949e"; ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = "center"; ctx.fillText(fmtP(mid), X(mid), h - 6);
+    ctx.textAlign = "left"; ctx.fillText(fmtP(minP), padL, h - 6);
+    ctx.textAlign = "right"; ctx.fillText(fmtP(maxP), w - padR, h - 6);
+  }
+
+  function drawSpark() {
+    const { ctx, w, h } = fitCanvas($("spark"));
+    ctx.clearRect(0, 0, w, h);
+    const n = i + 1; if (n < 2) return;
+    let lo = Infinity, hi = -Infinity;
+    for (let k = 0; k < n; k++) { lo = Math.min(lo, prices[k]); hi = Math.max(hi, prices[k]); }
+    const Y = (v) => (h - 3) - (v - lo) / ((hi - lo) || 1) * (h - 6);
+    const X = (k) => (k / (FRAMES.length - 1)) * w;
+    ctx.beginPath();
+    for (let k = 0; k < n; k++) { const x = X(k), y = Y(prices[k]); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.strokeStyle = prices[n - 1] >= prices[0] ? "#26a269" : "#e5484d";
+    ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // --- wire up controls --------------------------------------------------
+  $("play").onclick = () => (playing ? stop() : (i >= FRAMES.length - 1 && goto(0), start()));
+  $("back").onclick = () => { stop(); goto(i - 1); };
+  $("fwd").onclick = () => { stop(); goto(i + 1); };
+  $("scrub").oninput = (e) => { stop(); goto(+e.target.value); };
+  [...$("speeds").children].forEach((b) => (b.onclick = () => setSpeed(+b.dataset.s)));
+  window.addEventListener("resize", render);
+
+  // --- load --------------------------------------------------------------
+  fetch("simulation.json")
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then((d) => {
+      DATA = d; SCALE = d.meta.price_scale || 100; FRAMES = d.frames;
+      for (const f of FRAMES) prices.push(f.last);
+      $("scrub").max = FRAMES.length - 1;
+      $("h1title") && null;
+      render();
+      start();
+    })
+    .catch((err) => {
+      $("last").textContent = "load error";
+      document.querySelector(".hint").textContent =
+        "Could not load simulation.json (" + err.message + "). Serve this folder over HTTP.";
+    });
+})();
+</script>
+</body>
+</html>
