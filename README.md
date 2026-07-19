@@ -108,6 +108,14 @@ cmake --build build-docs --target docs
 **Requirements:** a C++20 compiler (GCC 11+, Clang 14+, Apple Clang 14+) and
 CMake 3.20+. GoogleTest and Google Benchmark are fetched automatically.
 
+### Git hooks (one-time, per clone)
+
+Version-controlled hooks live in `.githooks/`. Activate them once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Project layout
 
 ```
@@ -119,6 +127,7 @@ sim/           lob_sim: order-flow simulator + JSON export
 web/           browser visualizer (index.html) + generated replay data
 docs/          Doxygen config, mainpage, benchmark report
 .github/       CI + GitHub Pages workflows
+.githooks/     version-controlled git hooks (commit-msg)
 ```
 
 ## Design decisions worth a look
