@@ -84,12 +84,28 @@ A GitHub Actions workflow publishes `web/` to GitHub Pages (enable **Settings �
 Pages → Source: GitHub Actions**), giving a shareable demo at
 `https://patelgroup33.github.io/limit-order-book/`. See [web/README.md](web/README.md).
 
-## Building
+## Quick start (scripts)
+
+One-command wrappers live in `scripts/` (`.sh` for macOS/Linux, `.bat` for
+Windows):
+
+```bash
+scripts/build.sh        # configure + build everything (library, tests, simulator)
+scripts/test.sh         # build + run the full test suite
+scripts/run_sim.sh      # build the simulator, generate data, open the visualizer
+scripts/clean.sh        # remove build directories
+```
+
+`scripts/run_sim.sh [steps] [port]` is the "see it run" command — it builds
+`lob_sim`, regenerates `web/simulation.json`, and serves the visualizer at
+`http://localhost:8137`.
+
+## Building (manual)
 
 ```bash
 cmake -S . -B build                              # configure (Release by default)
 cmake --build build --parallel                   # build library + tests
-ctest --test-dir build --output-on-failure       # run the 49-test suite
+ctest --test-dir build --output-on-failure       # run the test suite
 ```
 
 Optional targets:
@@ -125,6 +141,7 @@ tests/         GoogleTest suite
 benchmark/     Google Benchmark microbenchmarks
 sim/           lob_sim: order-flow simulator + JSON export
 web/           browser visualizer (index.html) + generated replay data
+scripts/       build / test / run-simulator convenience scripts (.sh + .bat)
 docs/          Doxygen config, mainpage, benchmark report
 .github/       CI + GitHub Pages workflows
 .githooks/     version-controlled git hooks (commit-msg)
