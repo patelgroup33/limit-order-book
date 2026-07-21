@@ -32,6 +32,8 @@ if(LOB_BUILD_TESTS)
 
     add_executable(backtest_tests
         tests/test_csv_data_handler.cpp
+        tests/test_event_queue.cpp
+        tests/test_backtest_engine.cpp
     )
     target_link_libraries(backtest_tests PRIVATE backtest GTest::gtest_main)
     gtest_discover_tests(backtest_tests)
