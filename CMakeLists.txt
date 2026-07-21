@@ -47,6 +47,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(LOB_BUILD_TESTS      "Build unit tests"           ON)
 option(LOB_BUILD_BENCHMARKS "Build benchmarks"           OFF)
 option(LOB_BUILD_SIM        "Build the simulation app"   ON)
+option(LOB_BUILD_BACKTEST   "Build the backtesting engine" ON)
 option(LOB_BUILD_DOCS       "Generate Doxygen API docs"  OFF)
 option(LOB_ENABLE_WARNINGS  "Enable strict warnings"     ON)
 
@@ -79,6 +80,11 @@ endif()
 if(LOB_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+# ---- Backtesting engine (libs/backtest) -----------------------------------
+if(LOB_BUILD_BACKTEST)
+    add_subdirectory(libs/backtest)
 endif()
 
 # ---- Benchmarks -----------------------------------------------------------
