@@ -5,6 +5,7 @@
 # ---------------------------------------------------------------------------
 add_library(backtest
     src/csv_data_handler.cpp
+    src/moving_average_cross.cpp
 )
 
 target_include_directories(backtest PUBLIC
@@ -34,6 +35,7 @@ if(LOB_BUILD_TESTS)
         tests/test_csv_data_handler.cpp
         tests/test_event_queue.cpp
         tests/test_backtest_engine.cpp
+        tests/test_moving_average_cross.cpp
     )
     target_link_libraries(backtest_tests PRIVATE backtest GTest::gtest_main)
     gtest_discover_tests(backtest_tests)
