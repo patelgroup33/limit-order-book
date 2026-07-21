@@ -8,6 +8,7 @@ add_library(backtest
     src/moving_average_cross.cpp
     src/position.cpp
     src/portfolio.cpp
+    src/simulated_execution.cpp
 )
 
 target_include_directories(backtest PUBLIC
@@ -40,6 +41,7 @@ if(LOB_BUILD_TESTS)
         tests/test_moving_average_cross.cpp
         tests/test_position.cpp
         tests/test_portfolio.cpp
+        tests/test_simulated_execution.cpp
     )
     target_link_libraries(backtest_tests PRIVATE backtest GTest::gtest_main)
     gtest_discover_tests(backtest_tests)
