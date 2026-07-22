@@ -11,6 +11,8 @@ add_library(backtest
     src/simulated_execution.cpp
     src/risk_manager.cpp
     src/metrics.cpp
+    src/runner.cpp
+    src/reporter.cpp
 )
 
 target_include_directories(backtest PUBLIC
@@ -22,6 +24,10 @@ if(LOB_ENABLE_WARNINGS)
     target_compile_options(backtest PRIVATE
         -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
 endif()
+
+# Runnable end-to-end example.
+add_executable(backtest_example examples/backtest_example.cpp)
+target_link_libraries(backtest_example PRIVATE backtest)
 
 if(LOB_BUILD_TESTS)
     # GoogleTest is fetched once and shared across the monorepo; FetchContent
@@ -46,7 +52,23 @@ if(LOB_BUILD_TESTS)
         tests/test_simulated_execution.cpp
         tests/test_risk_manager.cpp
         tests/test_metrics.cpp
+        tests/test_runner.cpp
+        tests/test_reporter.cpp
     )
     target_link_libraries(backtest_tests PRIVATE backtest GTest::gtest_main)
     gtest_discover_tests(backtest_tests)
+endif()
+
+if(LOB_BUILD_BENCHMARKS)
+    include(FetchContent)
+    FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG        v1.9.0
+    )
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(benchmark)
+
+    add_executable(backtest_benchmarks benchmark/bench_backtest.cpp)
+    target_link_libraries(backtest_benchmarks PRIVATE backtest benchmark::benchmark_main)
 endif()
