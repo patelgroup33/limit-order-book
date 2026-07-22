@@ -10,6 +10,7 @@ add_library(backtest
     src/portfolio.cpp
     src/simulated_execution.cpp
     src/risk_manager.cpp
+    src/metrics.cpp
 )
 
 target_include_directories(backtest PUBLIC
@@ -44,6 +45,7 @@ if(LOB_BUILD_TESTS)
         tests/test_portfolio.cpp
         tests/test_simulated_execution.cpp
         tests/test_risk_manager.cpp
+        tests/test_metrics.cpp
     )
     target_link_libraries(backtest_tests PRIVATE backtest GTest::gtest_main)
     gtest_discover_tests(backtest_tests)
