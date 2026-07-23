@@ -13,6 +13,7 @@ add_library(backtest
     src/metrics.cpp
     src/runner.cpp
     src/reporter.cpp
+    src/json_export.cpp
 )
 
 target_include_directories(backtest PUBLIC
@@ -28,6 +29,10 @@ endif()
 # Runnable end-to-end example.
 add_executable(backtest_example examples/backtest_example.cpp)
 target_link_libraries(backtest_example PRIVATE backtest)
+
+# Exports a JSON replay for the web visualizer.
+add_executable(backtest_sim tools/backtest_sim.cpp)
+target_link_libraries(backtest_sim PRIVATE backtest)
 
 if(LOB_BUILD_TESTS)
     # GoogleTest is fetched once and shared across the monorepo; FetchContent

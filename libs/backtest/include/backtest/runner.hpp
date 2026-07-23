@@ -36,6 +36,7 @@ public:
     void on_fill(const FillEvent& e) override;
 
     [[nodiscard]] const std::vector<TradeRecord>& trades() const noexcept { return trades_; }
+    [[nodiscard]] const std::vector<FillEvent>& fills() const noexcept { return fills_; }
     [[nodiscard]] std::vector<double> trade_pnls() const;
 
 private:
@@ -47,6 +48,7 @@ private:
     Bar                      current_bar_{};
     bool                     have_bar_{false};
     std::vector<TradeRecord> trades_;
+    std::vector<FillEvent>   fills_;
 };
 
 }  // namespace bt

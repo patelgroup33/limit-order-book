@@ -60,6 +60,7 @@ void BacktestRunner::on_order(const OrderEvent& e, EventQueue& q) {
 }
 
 void BacktestRunner::on_fill(const FillEvent& e) {
+    fills_.push_back(e);
     const double before = portfolio_.realized_pnl();
     portfolio_.on_fill(e);
     const double realized = portfolio_.realized_pnl() - before;
